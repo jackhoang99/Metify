@@ -20,7 +20,7 @@ db = SQLAlchemy(app)
 spotify_oauth = SpotifyOAuth(
     client_id=os.getenv("CLIENT_ID"),
     client_secret=os.getenv("CLIENT_SECRET"),
-    redirect_uri="http://localhost:8000/callback",
+    redirect_uri="https://metify2.herokuapp.com/callback",
     scope="user-library-read user-top-read playlist-modify-private",
     cache_path=".spotifycache",
     show_dialog=True
@@ -119,6 +119,6 @@ with app.app_context():
 
 if __name__ == "__main__":
   port = int(os.environ.get("PORT", 5000))
-  app.run(debug=True, host="0.0.0.0", port=8000)
+  app.run(debug=True, host="0.0.0.0", port=port)
 
 
