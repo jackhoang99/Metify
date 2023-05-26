@@ -65,7 +65,7 @@ def callback():
         user = User.query.filter_by(spotify_id=token_info.get('id')).first()
         if user is None:
             # Create a new user and store the access token and refresh token
-            user = User(spotify_id=token_info.get('id'), access_token=token_info.get('refresh_token=token_info.get('refresh_token'))
+            user = User(spotify_id=token_info.get('id'), access_token=token_info.get('refresh_token'))
             db.session.add(user)
             db.session.commit()
 
