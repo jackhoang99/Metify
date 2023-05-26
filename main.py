@@ -114,7 +114,10 @@ def insights():
     for track in top_tracks:
       artists = [artist['name'] for artist in track['artists']]
       popularity = track['popularity']  # Get the popularity score of the track
-      image_url = track['album']['images'][0]['url']  # Get the URL of the first image in the album
+      if track['album']['images']:
+        image_url = track['album']['images'][0]['url']  # Get the URL of the first image in the album
+      else:
+        image_url = None
       top_tracks_data.append({'name': track['name'], 'artists': artists, 'popularity': popularity,
                               'image_url': image_url})
 
@@ -143,6 +146,6 @@ def callback():
 
 
 if __name__ == "__main__":
-  app.run(debug=False, host="0.0.0.0")
+  app.run(debug=True, port=8000)
 
 
