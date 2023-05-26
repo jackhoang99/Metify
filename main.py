@@ -94,47 +94,47 @@ def recommend():
         recommended_tracks = sp.recommendations(seed_artists=[seed_artists], limit=10)['tracks']
         return render_template("recommend.html", tracks=recommended_tracks)
     except spotipy.SpotifyException as e:
-      return str(e), 500  # Return the error message as plain text response with status code 500
+        return str(e), 500  # Return the error message as plain text response with status code 500
 
 
 @app.route("/insights")
 def insights():
-  token_info = session.get('token_info')
-  if not token_info:
-    return redirect(url_for('authorize'))
+    token_info = session.get('token_info')
+    if not token_info:
+        return redirect(url_for('authorize'))
 
-  access_token = token_info['access_token']
-  sp = spotipy.Spotify(auth=access_token)
+    access_token = token_info['access_token']
+    sp = spotipy.Spotify(auth_manager=auth_manager)
 
-  try:
-    # Fetch the user's top tracks
-    top_tracks = sp.current_user_top_tracks(limit=5, time_range="medium_term")['items']
-    top_tracks_data = []
+    try:
+        # Fetch the user's top tracks
+        top_tracks = sp.current_user_top_tracks(limit=5, time_range="medium_term")['items']
+        top_tracks_data = []
 
-    for track in top_tracks:
-      artists = [artist['name'] for artist in track['artists']]
-      popularity = track['popularity']
-      if track['album']['images']:
-        image_url = track['album']['images'][0]['url']
-      else:
-        image_url = None
-      top_tracks_data.append({'name': track['name'], 'artists': artists, 'popularity': popularity,
-                              'image_url': image_url})
+        for track in top_tracks:
+            artists = [artist['name'] for artist in track['artists']]
+            popularity = track['popularity']
+            if track['album']['images']:
+                image_url = track['album']['images'][0]['url']
+            else:
+                image_url = None
+            top_tracks_data.append({'name': track['name'], 'artists': artists, 'popularity': popularity,
+                                    'image_url': image_url})
 
-    # Fetch the user's top artists
-    top_artists = sp.current_user_top_artists(limit=5, time_range="medium_term")['items']
-    top_artists_data = [artist['name'] for artist in top_artists]
+        # Fetch the user's top artists
+        top_artists = sp.current_user_top_artists(limit=5, time_range="medium_term")['items']
+        top_artists_data = [artist['name'] for artist in top_artists]
 
-    return render_template("insights.html", top_tracks=top_tracks_data, top_artists=top_artists_data)
+        return render_template("insights.html", top_tracks=top_tracks_data, top_artists=top_artists_data)
 
-  except spotipy.SpotifyException as e:
-    return str(e), 500
+    except spotipy.SpotifyException as e:
+        return str(e), 500
 
 
 @app.route("/authorize")
 def authorize():
-  auth_url = auth_manager.get_authorize_url()
-  return redirect(auth_url)
+    auth_url = auth_manager.get_authorize_url()
+    return redirect(auth_url)
 
 
 @app.route("/callback")
@@ -147,6 +147,4 @@ def callback():
 
 if __name__ == "__main__":
     app.run(port=8000, debug=True)
-
-
 
