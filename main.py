@@ -79,14 +79,10 @@ def insights():
             top_tracks_data.append({'name': track['name'], 'artists': artists, 'popularity': popularity,
                                     'image_url': image_url})
 
-        # Fetch the user's top artists
-        top_artists = sp.current_user_top_artists(limit=5, time_range="medium_term")['items']
-        top_artists_data = [artist['name'] for artist in top_artists]
-
     except spotipy.SpotifyException as e:
         return str(e), 500
 
-    return render_template("insights.html", top_tracks=top_tracks_data, top_artists=top_artists_data)
+    return render_template("insights.html", top_tracks=top_tracks_data)
 
 
 if __name__ == "__main__":
