@@ -12,7 +12,7 @@ app.secret_key = "your_secret_key"
 
 client_id = os.getenv("CLIENT_ID")
 client_secret = os.getenv("CLIENT_SECRET")
-redirect_uri = "http://localhost:8000/callback"  # Set the redirect URI for authorization
+redirect_uri = "https://metify2.herokuapp.com/"  # Set the redirect URI for authorization
 
 # Configure the SpotifyOAuth object
 auth_manager = SpotifyOAuth(
