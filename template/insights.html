@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>METIFY - Insights</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/insights.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>MOST LISTENED SONGS</h1>
+        <div class="slideshow-container">
+            {% for track in top_tracks %}
+            <div class="slide {% if loop.index == 1 %}active{% endif %}">
+                <img class="slide-img" src="{{ track.image_url }}" alt="{{ track.name }}">
+                <div class="slide-caption">
+                    {{ track.name }} - {{ track.artists|join(', ') }} (Popularity: {{ track.popularity }})
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <img class="pinterest-image" src="{{ url_for('static', filename='14.png') }}" alt="Pinterest Image">
+    </div>
+
+    <script>
+        var slides = document.getElementsByClassName("slide");
+        var index = 0;
+
+        setInterval(function() {
+            slides[index].classList.remove("active");
+            index = (index + 1) % slides.length;
+            slides[index].classList.add("active");
+        }, 3000);
+    </script>
+</body>
+</html>

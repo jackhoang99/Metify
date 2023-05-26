@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>METIFY - Recommendations</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/recommend.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Recommendations</h1>
+        <ul class="track-list">
+            {% for track in tracks %}
+            <li>{{ track['name'] }} - {{ track['artists'][0]['name'] }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>
