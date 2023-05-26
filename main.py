@@ -7,7 +7,7 @@ from flask import Flask, render_template, request
 
 load_dotenv()
 
-app = Flask(__name__, template_folder='template')
+app = Flask(__name__, template_folder='templates')
 
 client_id = os.getenv("CLIENT_ID")
 client_secret = os.getenv("CLIENT_SECRET")
