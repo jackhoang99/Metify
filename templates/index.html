@@ -18,18 +18,5 @@
           </ul>
         </div>
     </div>
-
-    <div class="content">
-        <div class="left-col">
-            {% if not session.access_token %}
-                <a href="/login" class="login-btn">LOGIN WITH SPOTIFY</a>
-            {% else %}
-                <a href="/logout" class="logout-btn">LOGOUT</a>
-            {% endif %}
-        </div>
-        <div class="right-col">
-
-        </div>
-    </div>
 </body>
 </html>
