@@ -57,12 +57,14 @@ def logout():
     session.clear()
     return redirect(url_for("index"))
 
-
 @app.route("/insights")
 def insights():
     # Check if the user is authenticated
     if 'access_token' not in session:
         return redirect(url_for("login"))
+
+    # Clear the previous insights data
+    session.pop('top_tracks', None)
 
     # Initialize the Spotify instance with the user's access token
     sp = spotipy.Spotify(auth=session['access_token'])
@@ -79,10 +81,14 @@ def insights():
             top_tracks_data.append({'name': track['name'], 'artists': artists, 'popularity': popularity,
                                     'image_url': image_url})
 
+        # Store the new insights data in the session
+        session['top_tracks'] = top_tracks_data
+
     except spotipy.SpotifyException as e:
         return str(e), 500
 
     return render_template("insights.html", top_tracks=top_tracks_data)
+
 
 
 if __name__ == "__main__":
