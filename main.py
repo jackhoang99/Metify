@@ -1,18 +1,19 @@
 import os
-import random
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, session, redirect, url_for
+from flask import Flask, render_template, session, redirect, url_for, request
+import secrets
 
 load_dotenv()
 
 app = Flask(__name__, template_folder='templates')
-app.secret_key = "your_secret_key"
+app.secret_key = secrets.token_hex(16)  # Assign a secret key
 
+# Load environment variables
 client_id = os.getenv("CLIENT_ID")
 client_secret = os.getenv("CLIENT_SECRET")
-redirect_uri = "http://localhost:8000/callback"  # Set the redirect URI for authorization
+redirect_uri = "https://metify2.herokuapp.com/callback"  # Update with your Heroku app's domain
 
 # Configure the SpotifyOAuth object
 auth_manager = SpotifyOAuth(
@@ -30,81 +31,41 @@ def index():
     return render_template("index.html")
 
 
-def generate_quiz_questions(liked_songs):
-    quiz_questions = []
-    for index, song in enumerate(liked_songs):
-        question_id = f"question{index}"
-        options = [song['name']]
-        while len(options) < 4:
-            random_song = random.choice(liked_songs)
-            if random_song['name'] not in options:
-                options.append(random_song['name'])
-        random.shuffle(options)
-        quiz_questions.append(
-            {'question_id': question_id, 'question': song['artists'][0]['name'], 'options': options,
-             'answer': song['name']})
-
-    return quiz_questions
+@app.route("/login")
+def login():
+    # Generate the authorization URL and redirect the user to the Spotify login page
+    auth_url = auth_manager.get_authorize_url()
+    return redirect(auth_url)
 
 
-@app.route("/quiz", methods=["GET", "POST"])
-def quiz():
-    if request.method == "POST":
-        sp = spotipy.Spotify(auth_manager=auth_manager)
-        try:
-            results = sp.current_user_saved_tracks(limit=10)
-            liked_songs = [item['track'] for item in results['items']]
-            questions = generate_quiz_questions(liked_songs)  # Call a function to generate quiz questions
+@app.route("/callback")
+def callback():
+    # Process the callback from Spotify OAuth flow
+    code = request.args.get("code")
+    token_info = auth_manager.get_access_token(code)
 
-            score = 0
-            for question in questions:
-                user_answer = request.form.get(question['question_id'])  # Get the selected answer for the question
-                if user_answer == question['answer']:
-                    score += 1
+    # Store the access token and refresh token securely in the session
+    session['access_token'] = token_info['access_token']
+    session['refresh_token'] = token_info['refresh_token']
 
-            return f"Quiz completed! Your final score is: {score}/{len(questions)}"
-        except spotipy.SpotifyException as e:
-            return str(e), 500  # Return the error message as plain text response with status code 500
-
-    # For GET requests, render the initial quiz start page
-    sp = spotipy.Spotify(auth_manager=auth_manager)
-    try:
-        results = sp.current_user_saved_tracks(limit=10)
-        liked_songs = [item['track'] for item in results['items']]
-        questions = generate_quiz_questions(liked_songs)  # Call a function to generate quiz questions
-
-        return render_template("quiz.html", questions=questions)
-    except spotipy.SpotifyException as e:
-        return str(e), 500  # Return the error message as plain text response with status code 500
+    return redirect(url_for("insights"))
 
 
-@app.route("/recommend")
-def recommend():
-    token_info = session.get('token_info')
-    if not token_info:
-        return redirect(url_for('authorize'))
-
-    access_token = token_info['access_token']
-    sp = spotipy.Spotify(auth_manager=auth_manager)
-
-    try:
-        results = sp.current_user_top_artists(limit=10, time_range="medium_term")
-        top_artists = results['items']
-        seed_artists = ','.join(artist['id'] for artist in top_artists)
-        recommended_tracks = sp.recommendations(seed_artists=[seed_artists], limit=10)['tracks']
-        return render_template("recommend.html", tracks=recommended_tracks)
-    except spotipy.SpotifyException as e:
-        return str(e), 500  # Return the error message as plain text response with status code 500
+@app.route("/logout")
+def logout():
+    # Clear the session and revoke the user's access token
+    session.clear()
+    return redirect(url_for("index"))
 
 
 @app.route("/insights")
 def insights():
-    token_info = session.get('token_info')
-    if not token_info:
-        return redirect(url_for('authorize'))
+    # Check if the user is authenticated
+    if 'access_token' not in session:
+        return redirect(url_for("login"))
 
-    access_token = token_info['access_token']
-    sp = spotipy.Spotify(auth_manager=auth_manager)
+    # Initialize the Spotify instance with the user's access token
+    sp = spotipy.Spotify(auth=session['access_token'])
 
     try:
         # Fetch the user's top tracks
@@ -114,37 +75,22 @@ def insights():
         for track in top_tracks:
             artists = [artist['name'] for artist in track['artists']]
             popularity = track['popularity']
-            if track['album']['images']:
-                image_url = track['album']['images'][0]['url']
-            else:
-                image_url = None
+            image_url = track['album']['images'][0]['url']
             top_tracks_data.append({'name': track['name'], 'artists': artists, 'popularity': popularity,
                                     'image_url': image_url})
 
         # Fetch the user's top artists
-        top_artists = sp.current_user_top_artists(limit=5, time_range="medium_term")['items']
-        top_artists_data = [artist['name'] for artist in top_artists]
+            # Fetch the user's top artists
+            top_artists = sp.current_user_top_artists(limit=5, time_range="medium_term")['items']
+            top_artists_data = [artist['name'] for artist in top_artists]
 
-        return render_template("insights.html", top_tracks=top_tracks_data, top_artists=top_artists_data)
-
+            return render_template("insights.html", top_tracks=top_tracks_data, top_artists=top_artists_data)
     except spotipy.SpotifyException as e:
         return str(e), 500
 
 
-@app.route("/authorize")
-def authorize():
-    auth_url = auth_manager.get_authorize_url()
-    return redirect(auth_url)
-
-
-@app.route("/callback")
-def callback():
-    code = request.args.get('code')
-    token_info = auth_manager.get_access_token(code)
-    session['token_info'] = token_info
-    return redirect(url_for('insights'))
-
-
 if __name__ == "__main__":
-    app.run(port=8000, debug=True)
+  # Use the PORT environment variable provided by Heroku
+  port = int(os.environ.get("PORT", 5000))
+  app.run(debug=True, host="0.0.0.0", port=port)
 
