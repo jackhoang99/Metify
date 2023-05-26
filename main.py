@@ -68,8 +68,8 @@ def insights():
     sp = spotipy.Spotify(auth=session['access_token'])
 
     try:
-        # Fetch the user's top tracks
-        top_tracks = sp.current_user_top_tracks(limit=5, time_range="medium_term")['items']
+        # Fetch the user's most listened to tracks
+        top_tracks = sp.current_user_top_tracks(limit=5, time_range="long_term")['items']
         top_tracks_data = []
 
         for track in top_tracks:
@@ -86,7 +86,7 @@ def insights():
 
 
 if __name__ == "__main__":
-  # Use the PORT environment variable provided by Heroku
-  port = int(os.environ.get("PORT", 5000))
-  app.run(debug=True, host="0.0.0.0", port=port)
+    # Use the PORT environment variable provided by Heroku
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=True, host="0.0.0.0", port=port)
 
