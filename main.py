@@ -3,7 +3,6 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from dotenv import load_dotenv
 from flask import Flask, render_template, redirect, url_for, request, session
-from flask_sqlalchemy import SQLAlchemy
 import secrets
 
 load_dotenv()
@@ -23,23 +22,6 @@ spotify_oauth = SpotifyOAuth(
     cache_path=".spotifycache",
     show_dialog=True
 )
-
-# User model for database
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    spotify_id = db.Column(db.String(255), unique=True)
-    access_token = db.Column(db.String(255))
-    refresh_token = db.Column(db.String(255))
-    top_tracks = db.relationship('TopTrack', backref='user', lazy=True)
-
-# TopTrack model for database
-class TopTrack(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    name = db.Column(db.String(255))
-    artists = db.Column(db.String(255))
-    popularity = db.Column(db.Integer)
-    image_url = db.Column(db.String(255))
 
 @app.route("/")
 def index():
@@ -63,13 +45,10 @@ def callback():
         # Create a new user and store the access token and refresh token
         user = User(spotify_id=token_info.get('id'), access_token=token_info.get('access_token'),
                     refresh_token=token_info.get('refresh_token'))
-        db.session.add(user)
-        db.session.commit()
     else:
         # Update the user's access token and refresh token
         user.access_token = token_info.get('access_token')
         user.refresh_token = token_info.get('refresh_token')
-        db.session.commit()
 
     # Store the access token in the session
     session['user_id'] = user.id
@@ -85,7 +64,6 @@ def insights():
 
     # Clear the previous insights data for the user
     TopTrack.query.filter_by(user_id=session['user_id']).delete()
-    db.session.commit()
 
     # Fetch the user's access token
     user = User.query.get(session['user_id'])
@@ -105,8 +83,6 @@ def insights():
           image_url = track['album']['images'][0]['url']
           top_track = TopTrack(user_id=user.id, name=track['name'], artists=', '.join(artists),
                                popularity=popularity, image_url=image_url)
-          db.session.add(top_track)
-        db.session.commit()
 
         # Fetch the top tracks data from the database for the user
         top_tracks_data = TopTrack.query.filter_by(user_id=user.id).all()
@@ -117,9 +93,6 @@ def insights():
     return render_template("insights.html", top_tracks=top_tracks_data)
 
 
-# Create the database tables
-with app.app_context():
-  db.create_all()
 
 if __name__ == "__main__":
   port = int(os.environ.get("PORT", 5000))
