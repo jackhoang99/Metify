@@ -10,9 +10,6 @@ load_dotenv()
 app = Flask(__name__, template_folder='templates')
 app.secret_key = secrets.token_hex(16)  # Assign a secret key
 
-# Configure the database
-
-
 # Configure SpotifyOAuth
 spotify_oauth = SpotifyOAuth(
     client_id=os.getenv("CLIENT_ID"),
@@ -39,19 +36,9 @@ def callback():
     code = request.args.get("code")
     token_info = spotify_oauth.get_access_token(code)
 
-    # Check if the user is already authenticated
-    user = User.query.filter_by(spotify_id=token_info.get('id')).first()
-    if user is None:
-        # Create a new user and store the access token and refresh token
-        user = User(spotify_id=token_info.get('id'), access_token=token_info.get('access_token'),
-                    refresh_token=token_info.get('refresh_token'))
-    else:
-        # Update the user's access token and refresh token
-        user.access_token = token_info.get('access_token')
-        user.refresh_token = token_info.get('refresh_token')
-
     # Store the access token in the session
-    session['user_id'] = user.id
+    session['access_token'] = token_info.get('access_token')
+    session['refresh_token'] = token_info.get('refresh_token')
 
     return redirect(url_for("insights"))
 
@@ -59,15 +46,10 @@ def callback():
 @app.route("/insights")
 def insights():
     # Check if the user is authenticated
-    if 'user_id' not in session:
+    if 'access_token' not in session or 'refresh_token' not in session:
         return redirect(url_for("login"))
 
-    # Clear the previous insights data for the user
-    TopTrack.query.filter_by(user_id=session['user_id']).delete()
-
-    # Fetch the user's access token
-    user = User.query.get(session['user_id'])
-    access_token = user.access_token
+    access_token = session['access_token']
 
     # Initialize the Spotify instance with the user's access token
     sp = spotipy.Spotify(auth=access_token)
@@ -76,24 +58,30 @@ def insights():
         # Fetch the user's most listened to tracks
         top_tracks = sp.current_user_top_tracks(limit=5, time_range="long_term")['items']
 
-        # Store the new insights data in the database
-        for track in top_tracks:
-          artists = [artist['name'] for artist in track['artists']]
-          popularity = track['popularity']
-          image_url = track['album']['images'][0]['url']
-          top_track = TopTrack(user_id=user.id, name=track['name'], artists=', '.join(artists),
-                               popularity=popularity, image_url=image_url)
+        top_tracks_data = []
 
-        # Fetch the top tracks data from the database for the user
-        top_tracks_data = TopTrack.query.filter_by(user_id=user.id).all()
+        # Fetch the required data from the top tracks
+        for track in top_tracks:
+            artists = [artist['name'] for artist in track['artists']]
+            popularity = track['popularity']
+            image_url = track['album']['images'][0]['url']
+
+            top_track = {
+                'name': track['name'],
+                'artists': ', '.join(artists),
+                'popularity': popularity,
+                'image_url': image_url
+            }
+
+            top_tracks_data.append(top_track)
 
     except spotipy.SpotifyException as e:
-      return str(e), 500
+        return str(e), 500
 
     return render_template("insights.html", top_tracks=top_tracks_data)
 
 
-
 if __name__ == "__main__":
-  port = int(os.environ.get("PORT", 5000))
-  app.run(debug=True, host="0.0.0.0", port=port)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=True, host="0.0.0.0", port=port)
+
