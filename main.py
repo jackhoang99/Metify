@@ -12,9 +12,7 @@ app = Flask(__name__, template_folder='templates')
 app.secret_key = secrets.token_hex(16)  # Assign a secret key
 
 # Configure the database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://yvrdklbxzfgxmb:eefe21b631f068c5a54b1fb6d1c56154f11a6899e9c4ead4f3e88a3aec6795ca@ec2-44-213-228-107.compute-1.amazonaws.com:5432/d4b881muj5mcaf'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+
 
 # Configure SpotifyOAuth
 spotify_oauth = SpotifyOAuth(
