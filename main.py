@@ -1,19 +1,17 @@
 import os
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-from dotenv import load_dotenv
 from flask import Flask, render_template, redirect, url_for, request, session
 import secrets
 
-load_dotenv()
 
 app = Flask(__name__, template_folder='templates')
 app.secret_key = secrets.token_hex(16)  # Assign a secret key
 
 # Configure SpotifyOAuth
 spotify_oauth = SpotifyOAuth(
-    client_id=os.getenv("CLIENT_ID"),
-    client_secret=os.getenv("CLIENT_SECRET"),
+    client_id="34ed979807084c44bd859a585f73c2a1",
+    client_secret="2449612422e9430da4be9df241528b18",
     redirect_uri="https://metify2.herokuapp.com/callback",
     scope="user-library-read user-top-read playlist-modify-private",
     cache_path=".spotifycache",
@@ -40,11 +38,11 @@ def callback():
     session['access_token'] = token_info.get('access_token')
     session['refresh_token'] = token_info.get('refresh_token')
 
-    return redirect(url_for("insights"))
+    return redirect(url_for("explore"))
 
 
-@app.route("/insights")
-def insights():
+@app.route("/explore")
+def explore():
     # Check if the user is authenticated
     if 'access_token' not in session or 'refresh_token' not in session:
         return redirect(url_for("login"))
@@ -78,7 +76,7 @@ def insights():
     except spotipy.SpotifyException as e:
         return str(e), 500
 
-    return render_template("insights.html", top_tracks=top_tracks_data)
+    return render_template("explore.html", top_tracks=top_tracks_data)
 
 
 if __name__ == "__main__":

@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>METIFY - Insights</title>
+    <title>METIFY-Exploration</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/insights.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>MOST LISTENED SONGS</h1>
+        <h1>MUSICS TO DISCOVER</h1>
         <div class="slideshow-container">
             {% for track in top_tracks %}
             <div class="slide {% if loop.index == 1 %}active{% endif %}">
